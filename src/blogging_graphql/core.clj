@@ -35,24 +35,11 @@
       {})))
 
 
-(defn post-req
+(defn handle-req
   [request]
   (let [query (extract-query request)
         vars (variable-map request)
         result (execute compiled-schema query vars nil)
-        status (if (-> result :errors seq)
-                 400
-                 200)]
-    {:status status
-     :headers {"Content-Type" "application/json"}
-     :body (json/generate-string result)}))
-
-
-(defn get-req
-  [request]
-  (let [query (extract-query request)
-        vars (variable-map request)
-        result (execute compiled-schema query nil)
         status (if (-> result :errors seq)
                  400
                  200)]
@@ -71,12 +58,13 @@
          (response/resource-response "index.html" {:root "public"}))
 
     (GET "/graphql" req
-         (get-req req))
+         (handle-req req))
 
     (POST "/graphql" req
-          (post-req req))
+          (handle-req req))
 
     (route/resources "/")
+
     (route/not-found "Not Found")))
 
 

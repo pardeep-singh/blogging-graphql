@@ -6,18 +6,6 @@
                              :email {:description "Email of an Author."
                                      :type (non-null String)}}}
            
-           :blog {:description "Blog posted by an Author."
-                  :fields {:id {:description "Unique Identifier for a Blog."
-                                :type (non-null Int)}
-                           :body {:description "Body of the blog."
-                                  :type (non-null String)}
-                           :author {:description "Author of the Blog."
-                                    :type (non-null :author)
-                                    :resolve :getAuthor}
-                           :comment {:description "Comments posted on the blog."
-                                     :type (list :comment)
-                                     :resolve :getComments}}}
-
            :comment {:description "Comment posted on Blog."
                      :fields {:id {:description "Unique Identifier for a Comment."
                                    :type (non-null Int)}
@@ -25,7 +13,31 @@
                                      :type (non-null String)}
                               :author {:description "Author of the Blog."
                                        :type (non-null :author)
-                                       :resolve :getAuthor}}}}
+                                       :resolve :getAuthor}}}
+
+           :commentsConnections {:fields {:totalComments {:type (non-null Int)}
+                                          :nodes {:type (list :comment)}}}
+
+           :blog {:description "Blog posted by an Author."
+                  :fields {:id {:description "Unique Identifier for a Blog."
+                                :type (non-null Int)}
+                           :body {:description "Body of the Blog."
+                                  :type (non-null String)}
+                           :author {:description "Author of the Blog."
+                                    :type (non-null :author)
+                                    :resolve :getAuthor}
+                           :comments {:description "List of Comments on the Blog."
+                                      :type :commentsConnections
+                                      :args {:first {:type Int
+                                                     :default-value 10}
+                                             :last {:type Int
+                                                    :default-value 10}
+                                             :skip {:type Int
+                                                    :default-value 0}}
+                                      :resolve :getComments}}}
+
+           :blogsConnections {:fields {:totalBlogs {:type (non-null Int)}
+                                       :nodes {:type (list :blog)}}}}
 
  :queries {:getAuthor {:description "Returns an Author Given an Author ID."
                        :type :author
@@ -42,16 +54,41 @@
                      :resolve :getBlog}
 
            :getBlogs {:description "Returns all the Blogs."
-                      :type (list :blog)
+                      :type :blogsConnections
+                      :args {:first {:type Int
+                                     :default-value 10}
+                             :last {:type Int
+                                    :default-value 10}
+                             :skip {:type Int
+                                    :default-value 0}}
                       :resolve :getBlogs}
 
            :getComments {:description "Returns comments for a given Blog ID."
-                         :type (list :comment)
-                         :args {:blog_id {:type (non-null Int)}}
+                         :type :commentsConnections
+                         :args {:first {:type Int
+                                        :default-value 10}
+                                :last {:type Int
+                                       :default-value 10}
+                                :skip {:type Int
+                                       :default-value 0}
+                                :blogID {:type (non-null Int)}}
                          :resolve :getComments}}
 
  :mutations {:createAuthor {:description "Creates an Author given an email and name(optional)."
                             :type :author
                             :args {:email {:type (non-null String)}
                                    :name {:type String}}
-                            :resolve :createAuthor}}}
+                            :resolve :createAuthor}
+
+             :postComment {:description "Post a comment to the Blog."
+                           :type :comment
+                           :args {:blogID {:type (non-null Int)}
+                                  :authorID {:type (non-null Int)}
+                                  :body {:type (non-null String)}}
+                           :resolve :postComment}
+
+             :postBlog {:description "Post the Blog."
+                        :type :blog
+                        :args {:authorID {:type (non-null Int)}
+                               :body {:type (non-null String)}}
+                        :resolve :postBlog}}}

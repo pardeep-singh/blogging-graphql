@@ -1,7 +1,10 @@
-(ns blogging-graphql.db)
+(ns blogging-graphql.db
+  (:require [clojure.set :refer [rename-keys]]))
 
 
-(def data (atom {:author_id_counter 3
+(def data (atom {:authors-id-counter 3
+                 :comments-id-counter 5
+                 :blogs-id-counter 3
                  :authors {1 {:id 1
                               :name "Default Author"
                               :email "default@mail.com"}
@@ -10,36 +13,36 @@
                               :email "author2@mail.com"}}
                  :blogs {1 {:id 1
                             :body "First blog"
-                            :author_id 1}
+                            :author-id 1}
                          2 {:id 2
                             :body "Second blog"
-                            :author_id 2}}
+                            :author-id 2}}
                  :comments {1 {:id 1
                                :body "First Comment"
-                               :author_id 1
-                               :blog_id 1}
+                               :author-id 1
+                               :blog-id 1}
                             2 {:id 2
                                :body "Second Comment"
-                               :author_id 2
-                               :blog_id 1}
+                               :author-id 2
+                               :blog-id 1}
                             3 {:id 3
                                :body "Third Comment"
-                               :author_id 2
-                               :blog_id 2}
+                               :author-id 2
+                               :blog-id 2}
                             4 {:id 4
                                :body "Second Comment"
-                               :author_id 2
-                               :blog_id 2}}}))
+                               :author-id 2
+                               :blog-id 2}}}))
 
 
 (defn create-author
   "Creates an author given a name and email."
   [ctx args values]
-  (let [author_id (:author_id_counter @data)
+  (let [author-id (:author-id-counter @data)
         author-record (assoc args
-                             :id author_id)]
-    (swap! data update :author_id_counter inc)
-    (swap! data assoc-in [:authors author_id] author-record)
+                             :id author-id)]
+    (swap! data update :author-id-counter inc)
+    (swap! data assoc-in [:authors author-id] author-record)
     author-record))
 
 
@@ -48,7 +51,7 @@
   [ctx args values]
   (if (:id args)
     (get-in @data [:authors (:id args)])
-    (get-in @data [:authors (:author_id values)])))
+    (get-in @data [:authors (:author-id values)])))
 
 
 (defn get-all-authors
@@ -66,15 +69,60 @@
 (defn get-all-blogs
   "Retruns all the blogs"
   [ctx args values]
-  (vals (get-in @data [:blogs])))
+  (let [blogs (vals (get-in @data [:blogs]))
+        blogs-paylod {:totalBlogs (count blogs)}]
+    (if (> (:skip args)
+           0)
+      (assoc blogs-paylod
+             :nodes (take (:last args)
+                          (drop (:skip args)
+                                blogs)))
+      (assoc blogs-paylod
+             :nodes (take (:first args)
+                          blogs)))))
 
 
 (defn get-comments
   "Returns all the comments for a given blog."
   [ctx args values]
-  (let [blog_id (if (:blog_id args)
-                  (:blog_id args)
-                  (:id values))]
-    (filterv #(= blog_id
-                 (:blog_id %))
-             (vals (get-in @data [:comments])))))
+  (let [blog-id (if (:blogID args)
+                  (:blogID args)
+                  (:id values))
+        comments (filterv #(= blog-id
+                              (:blog-id %))
+                          (vals (get-in @data [:comments])))
+        comments-payload {:totalComments (count comments)}]
+    (if (> (:skip args)
+           0)
+      (assoc comments-payload
+             :nodes (take (:last args)
+                          (drop (:skip args)
+                                comments)))
+      (assoc comments-payload
+             :nodes (take (:first args)
+                          comments)))))
+
+
+(defn post-comment
+  "Post a comment to the blog."
+  [ctx args values]
+  (let [comment-id (:comments-id-counter @data)
+        comment-data (-> args
+                         (assoc :id comment-id)
+                         (rename-keys {:blogID :blog-id
+                                       :authorID :author-id}))]
+    (swap! data update :comments-id-counter inc)
+    (swap! data assoc-in [:comments comment-id] comment-data)
+    comment-data))
+
+
+(defn post-blog
+  "Post a blog."
+  [ctx args values]
+  (let [blog-id (:blogs-id-counter @data)
+        blog-data (-> args
+                      (assoc :id blog-id)
+                      (rename-keys {:authorID :author-id}))]
+    (swap! data update :blogs-id-counter inc)
+    (swap! data assoc-in [:blogs blog-id] blog-data)
+    blog-data))

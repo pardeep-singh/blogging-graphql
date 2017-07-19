@@ -18,5 +18,7 @@
                               :getAllAuthors db/get-all-authors
                               :getBlog db/get-blog
                               :getBlogs db/get-all-blogs
-                              :getComments db/get-comments})
+                              :getComments db/get-comments
+                              :postComment db/post-comment
+                              :postBlog db/post-blog})
       schema/compile))
