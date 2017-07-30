@@ -1,6 +1,6 @@
 {:objects {:author {:description "Author object."
                     :fields {:id {:description "Unique identifier for an Author."
-                                  :type (non-null Int)}
+                                  :type (non-null String)}
                              :name {:description "Name of an Author."
                                     :type String}
                              :email {:description "Email of an Author."
@@ -8,7 +8,7 @@
            
            :comment {:description "Comment posted on the Blog."
                      :fields {:id {:description "Unique identifier for the Comment."
-                                   :type (non-null Int)}
+                                   :type (non-null String)}
                               :body {:description "Body of the comment."
                                      :type (non-null String)}
                               :author {:description "Author of the Blog."
@@ -17,7 +17,7 @@
 
            :blog {:description "Blog posted by an Author."
                   :fields {:id {:description "Unique identifier for a Blog."
-                                :type (non-null Int)}
+                                :type (non-null String)}
                            :body {:description "Body of the Blog."
                                   :type (non-null String)}
                            :author {:description "Author of the Blog."
@@ -33,7 +33,7 @@
 
  :queries {:getAuthor {:description "Returns an Author given an Author ID."
                        :type :author
-                       :args {:id {:type (non-null Int)}}
+                       :args {:id {:type (non-null String)}}
                        :resolve :getAuthor}
 
            :getAllAuthors {:description "Returns all the Authors."
@@ -42,7 +42,7 @@
            
            :getBlog {:description "Returns a Blog given a Blog ID."
                      :type :blog
-                     :args {:id {:type (non-null Int)}}
+                     :args {:id {:type (non-null String)}}
                      :resolve :getBlog}
 
            :getBlogs {:description "Returns all the Blogs."
@@ -59,7 +59,7 @@
                                         :default-value 10}
                                 :skip {:type Int
                                        :default-value 0}
-                                :blogID {:type (non-null Int)}}
+                                :blogID {:type (non-null String)}}
                          :resolve :getComments}}
 
  :mutations {:createAuthor {:description "Creates an Author given an email and name(optional)."
@@ -70,13 +70,13 @@
 
              :postComment {:description "Post a comment on the Blog."
                            :type :comment
-                           :args {:blogID {:type (non-null Int)}
-                                  :authorID {:type (non-null Int)}
+                           :args {:blogID {:type (non-null String)}
+                                  :authorID {:type (non-null String)}
                                   :body {:type (non-null String)}}
                            :resolve :postComment}
 
              :postBlog {:description "Post the Blog."
                         :type :blog
-                        :args {:authorID {:type (non-null Int)}
+                        :args {:authorID {:type (non-null String)}
                                :body {:type (non-null String)}}
                         :resolve :postBlog}}}

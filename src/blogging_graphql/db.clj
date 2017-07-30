@@ -1,49 +1,59 @@
 (ns blogging-graphql.db
-  (:require [clojure.set :refer [rename-keys]]))
+  (:require [clojure.set :refer [rename-keys]])
+  (:import java.util.UUID))
 
 
-(def data (atom {:authors-id-counter 3
-                 :comments-id-counter 5
-                 :blogs-id-counter 3
-                 :authors {1 {:id 1
-                              :name "Default Author"
-                              :email "default@mail.com"}
-                           2 {:id 2
-                              :name "Author2"
-                              :email "author2@mail.com"}}
-                 :blogs {1 {:id 1
-                            :body "First blog"
-                            :author-id 1}
-                         2 {:id 2
-                            :body "Second blog"
-                            :author-id 2}}
-                 :comments {1 {:id 1
-                               :body "First Comment"
-                               :author-id 1
-                               :blog-id 1}
-                            2 {:id 2
-                               :body "Second Comment"
-                               :author-id 2
-                               :blog-id 1}
-                            3 {:id 3
-                               :body "Third Comment"
-                               :author-id 2
-                               :blog-id 2}
-                            4 {:id 4
-                               :body "Second Comment"
-                               :author-id 2
-                               :blog-id 2}}}))
+(def data (atom {}))
+
+
+(defn create-author*
+  [args]
+  (let [author-id (str (UUID/randomUUID))
+        author-data (assoc args
+                           :id author-id)]
+    (swap! data assoc-in [:authors author-id] author-data)
+    author-data))
+
+
+;; TODO: validate author-id and blog-id
+(defn post-comment*
+  [args]
+  (let [comment-id (str (UUID/randomUUID))
+        comment-data (-> args
+                         (assoc :id comment-id)
+                         (rename-keys {:blogID :blog-id
+                                       :authorID :author-id}))]
+    (swap! data assoc-in [:comments comment-id] comment-data)
+    comment-data))
+
+
+;; TODO: validate author-id
+(defn post-blog*
+  [args]
+  (let [blog-id (str (UUID/randomUUID))
+        blog-data (-> args
+                      (assoc :id blog-id)
+                      (rename-keys {:authorID :author-id}))]
+    (swap! data assoc-in [:blogs blog-id] blog-data)
+    blog-data))
 
 
 (defn create-author
   "Creates an author given a name and email."
   [ctx args values]
-  (let [author-id (:authors-id-counter @data)
-        author-record (assoc args
-                             :id author-id)]
-    (swap! data update :authors-id-counter inc)
-    (swap! data assoc-in [:authors author-id] author-record)
-    author-record))
+  (create-author* args))
+
+
+(defn post-comment
+  "Post a comment to the blog."
+  [ctx args values]
+  (post-comment* args))
+
+
+(defn post-blog
+  "Post a blog."
+  [ctx args values]
+  (post-blog* args))
 
 
 (defn get-author
@@ -91,26 +101,12 @@
                 comments))))
 
 
-(defn post-comment
-  "Post a comment to the blog."
-  [ctx args values]
-  (let [comment-id (:comments-id-counter @data)
-        comment-data (-> args
-                         (assoc :id comment-id)
-                         (rename-keys {:blogID :blog-id
-                                       :authorID :author-id}))]
-    (swap! data update :comments-id-counter inc)
-    (swap! data assoc-in [:comments comment-id] comment-data)
-    comment-data))
-
-
-(defn post-blog
-  "Post a blog."
-  [ctx args values]
-  (let [blog-id (:blogs-id-counter @data)
-        blog-data (-> args
-                      (assoc :id blog-id)
-                      (rename-keys {:authorID :author-id}))]
-    (swap! data update :blogs-id-counter inc)
-    (swap! data assoc-in [:blogs blog-id] blog-data)
-    blog-data))
+(defn generate-data
+  []
+  (let [authors (doall (repeatedly 3 #(create-author* {:email "test@mail.com"
+                                                       :name "test"})))
+        blogs (doall (repeatedly 5 #(post-blog* {:authorID (:id (first authors))
+                                                 :body "test"})))
+        comments (doall (repeatedly 5 #(post-comment* {:authorID (:id (first authors))
+                                                       :blogID (:id (first blogs))
+                                                       :body "test"})))]))

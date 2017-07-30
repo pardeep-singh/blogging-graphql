@@ -10,7 +10,8 @@
             [ring.util.response :as response]
             [blogging-graphql.schema :as bgs]
             [clojure.string :as str]
-            [com.walmartlabs.lacinia :refer [execute]]))
+            [com.walmartlabs.lacinia :refer [execute]]
+            [blogging-graphql.db :as bgd]))
 
 
 (defonce server nil)
@@ -75,7 +76,8 @@
 
 (defn start-server
   [port]
-  (let [compiled-schema (bgs/compiled-blogs-schema)
+  (let [_ (bgd/generate-data)
+        compiled-schema (bgs/compiled-blogs-schema)
         server (run-jetty (app compiled-schema)
                           {:port port
                            :join? false})]
