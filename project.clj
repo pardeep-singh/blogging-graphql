@@ -10,6 +10,7 @@
                  [org.clojure/tools.logging "0.2.6"]
                  [com.walmartlabs/lacinia "0.18.0"]]
   :plugins [[lein-ring "0.9.7"]]
-  :profiles
-  {:dev {:dependencies [[javax.servlet/servlet-api "2.5"]
-                        [ring/ring-mock "0.3.0"]]}})
+  :profiles {:dev {:dependencies [[javax.servlet/servlet-api "2.5"]
+                                  [ring/ring-mock "0.3.0"]]}}
+  :aot [blogging-graphql.core]
+  :main blogging-graphql.core)

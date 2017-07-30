@@ -1,10 +1,10 @@
 (ns blogging-graphql.schema
   (:require
-    [clojure.edn :as edn]
-    [clojure.java.io :as io]
-    [com.walmartlabs.lacinia.schema :as schema]
-    [com.walmartlabs.lacinia.util :as util]
-    [blogging-graphql.db :as db]))
+   [clojure.edn :as edn]
+   [clojure.java.io :as io]
+   [com.walmartlabs.lacinia.schema :as schema]
+   [com.walmartlabs.lacinia.util :as util]
+   [blogging-graphql.db :as db]))
 
 
 (defn compiled-blogs-schema

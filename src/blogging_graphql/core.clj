@@ -1,12 +1,10 @@
 (ns blogging-graphql.core
-  (:require [compojure.core :as cc :refer [context defroutes POST GET]]
+  (:require [compojure.core :refer [defroutes POST GET]]
             [compojure.route :as route]
-            [cheshire.core :as json]
-            [clojure.tools.logging :as ctl]
+            [cheshire.core :as cc]
             [ring.adapter.jetty :refer [run-jetty]]
             [ring.middleware
              [keyword-params :refer [wrap-keyword-params]]
-             [multipart-params :refer [wrap-multipart-params]]
              [params :refer [wrap-params]]]
             [blogging-graphql.middlewares :as bgm]
             [ring.util.response :as response]
@@ -16,7 +14,6 @@
 
 
 (defonce server nil)
-(def compiled-schema (bgs/compiled-blogs-schema))
 
 
 (defn extract-query
@@ -31,12 +28,12 @@
   [request]
   (let [vars (get-in request [:query-params "variables"])]
     (if-not (str/blank? vars)
-      (json/parse-string vars true)
+      (cc/parse-string vars true)
       {})))
 
 
 (defn handle-req
-  [request]
+  [request compiled-schema]
   (let [query (extract-query request)
         vars (variable-map request)
         result (execute compiled-schema query vars nil)
@@ -45,12 +42,12 @@
                  200)]
     {:status status
      :headers {"Content-Type" "application/json"}
-     :body (json/generate-string result)}))
+     :body (cc/generate-string result)}))
 
 
 (defn api-routes
-  []
-  (cc/defroutes routes
+  [compiled-schema]
+  (defroutes routes
 
     (GET "/ping" [] "PONG")
 
@@ -58,10 +55,10 @@
          (response/resource-response "index.html" {:root "public"}))
 
     (GET "/graphql" req
-         (handle-req req))
+         (handle-req req compiled-schema))
 
     (POST "/graphql" req
-          (handle-req req))
+          (handle-req req compiled-schema))
 
     (route/resources "/")
 
@@ -69,8 +66,8 @@
 
 
 (defn app
-  []
-  (-> (api-routes)
+  [compiled-schema]
+  (-> (api-routes compiled-schema)
       wrap-keyword-params
       wrap-params
       bgm/wrap-exceptions))
@@ -78,7 +75,8 @@
 
 (defn start-server
   [port]
-  (let [server (run-jetty (app)
+  (let [compiled-schema (bgs/compiled-blogs-schema)
+        server (run-jetty (app compiled-schema)
                           {:port port
                            :join? false})]
     (alter-var-root #'server (constantly server))

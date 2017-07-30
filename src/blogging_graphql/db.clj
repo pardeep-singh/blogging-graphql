@@ -38,10 +38,10 @@
 (defn create-author
   "Creates an author given a name and email."
   [ctx args values]
-  (let [author-id (:author-id-counter @data)
+  (let [author-id (:authors-id-counter @data)
         author-record (assoc args
                              :id author-id)]
-    (swap! data update :author-id-counter inc)
+    (swap! data update :authors-id-counter inc)
     (swap! data assoc-in [:authors author-id] author-record)
     author-record))
 
@@ -55,7 +55,7 @@
 
 
 (defn get-all-authors
-  "Returns all authors. May support pagination in future."
+  "Returns all authors."
   [ctx args values]
   (vals (get-in @data [:authors])))
 
@@ -67,40 +67,28 @@
 
 
 (defn get-all-blogs
-  "Retruns all the blogs"
+  "Retruns all the blogs."
   [ctx args values]
-  (let [blogs (vals (get-in @data [:blogs]))
-        blogs-paylod {:totalBlogs (count blogs)}]
-    (if (> (:skip args)
-           0)
-      (assoc blogs-paylod
-             :nodes (take (:last args)
-                          (drop (:skip args)
-                                blogs)))
-      (assoc blogs-paylod
-             :nodes (take (:first args)
-                          blogs)))))
+  (let [blogs (vals (get-in @data [:blogs]))]
+    (take (:first args)
+          (drop (:skip args)
+                blogs))))
 
 
 (defn get-comments
   "Returns all the comments for a given blog."
   [ctx args values]
   (let [blog-id (if (:blogID args)
+                  ;; when blogID is passed from getComments query.
                   (:blogID args)
+                  ;; When nested is request inside blogs.
                   (:id values))
         comments (filterv #(= blog-id
                               (:blog-id %))
-                          (vals (get-in @data [:comments])))
-        comments-payload {:totalComments (count comments)}]
-    (if (> (:skip args)
-           0)
-      (assoc comments-payload
-             :nodes (take (:last args)
-                          (drop (:skip args)
-                                comments)))
-      (assoc comments-payload
-             :nodes (take (:first args)
-                          comments)))))
+                          (vals (get-in @data [:comments])))]
+    (take (:first args)
+          (drop (:skip args)
+                comments))))
 
 
 (defn post-comment
