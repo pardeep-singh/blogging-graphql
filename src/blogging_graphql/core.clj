@@ -1,5 +1,5 @@
 (ns blogging-graphql.core
-  (:require [compojure.core :refer [defroutes POST GET]]
+  (:require [compojure.core :refer [defroutes POST GET context]]
             [compojure.route :as route]
             [cheshire.core :as cc]
             [ring.adapter.jetty :refer [run-jetty]]
@@ -52,16 +52,19 @@
 
     (GET "/ping" [] "PONG")
 
-    (GET "/" []
-         (response/resource-response "index.html" {:root "public"}))
+    ;; Context to handle GraphQL Queries
+    (context "/graphql" []
+             (GET "/" req
+                  (handle-req req compiled-schema))
 
-    (GET "/graphql" req
-         (handle-req req compiled-schema))
+             (POST "/" req
+                   (handle-req req compiled-schema)))
 
-    (POST "/graphql" req
-          (handle-req req compiled-schema))
+    ;; Resources routes for GraphiQL IDE
+    (GET "/graphiql" []
+         (response/resource-response "index.html" {:root "public/graphiql"}))
 
-    (route/resources "/")
+    (route/resources "/graphiql" {:root "public/graphiql"})
 
     (route/not-found "Not Found")))
 
