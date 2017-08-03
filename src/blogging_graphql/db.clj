@@ -91,7 +91,7 @@
   (let [blog-id (if (:blogID args)
                   ;; when blogID is passed from getComments query.
                   (:blogID args)
-                  ;; When nested is request inside blogs.
+                  ;; when comment is requested as a nested object.
                   (:id values))
         comments (filterv #(= blog-id
                               (:blog-id %))
