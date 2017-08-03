@@ -1,4 +1,5 @@
 (ns blogging-graphql.core
+  (:gen-class)
   (:require [compojure.core :refer [defroutes POST GET context]]
             [compojure.route :as route]
             [cheshire.core :as cc]
@@ -64,7 +65,7 @@
     (GET "/graphiql" []
          (response/resource-response "index.html" {:root "public/graphiql"}))
 
-    (route/resources "/graphiql" {:root "public/graphiql"})
+    (route/resources "/" {:root "public/graphiql"})
 
     (route/not-found "Not Found")))
 
