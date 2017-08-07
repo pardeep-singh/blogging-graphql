@@ -1,5 +1,6 @@
 (ns blogging-graphql.db
-  (:require [clojure.set :refer [rename-keys]])
+  (:require [clojure.set :refer [rename-keys]]
+            [com.walmartlabs.lacinia.resolve :refer [resolve-as]])
   (:import java.util.UUID))
 
 
@@ -15,27 +16,30 @@
     author-data))
 
 
-;; TODO: validate author-id and blog-id
 (defn post-comment*
   [args]
-  (let [comment-id (str (UUID/randomUUID))
-        comment-data (-> args
-                         (assoc :id comment-id)
-                         (rename-keys {:blogID :blog-id
-                                       :authorID :author-id}))]
-    (swap! data assoc-in [:comments comment-id] comment-data)
-    comment-data))
+  (if (and (get-in @data [:authors (:authorID args)])
+           (get-in @data [:blogs (:blogID args)]))
+    (let [comment-id (str (UUID/randomUUID))
+          comment-data (-> args
+                           (assoc :id comment-id)
+                           (rename-keys {:blogID :blog-id
+                                         :authorID :author-id}))]
+      (swap! data assoc-in [:comments comment-id] comment-data)
+      comment-data)
+    (resolve-as {} {:message "Invalid authorID or blogID"})))
 
 
-;; TODO: validate author-id
 (defn post-blog*
   [args]
-  (let [blog-id (str (UUID/randomUUID))
-        blog-data (-> args
-                      (assoc :id blog-id)
-                      (rename-keys {:authorID :author-id}))]
-    (swap! data assoc-in [:blogs blog-id] blog-data)
-    blog-data))
+  (if (get-in @data [:authors (:authorID args)])
+    (let [blog-id (str (UUID/randomUUID))
+          blog-data (-> args
+                        (assoc :id blog-id)
+                        (rename-keys {:authorID :author-id}))]
+      (swap! data assoc-in [:blogs blog-id] blog-data)
+      blog-data)
+    (resolve-as {} {:message "Invalid authorID"})))
 
 
 (defn create-author
